@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Branché !</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0F3D2A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Branché !">
+<link rel="apple-touch-icon" href="icons/icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<style>
+@font-face{font-family:'Barlow';font-style:normal;font-weight:400;font-display:swap;src:url(fonts/barlow-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/barlow-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow';font-style:normal;font-weight:600;font-display:swap;src:url(fonts/barlow-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:500;font-display:swap;src:url(fonts/barlow-condensed-latin-500-normal.woff2) format('woff2')}
+@font-face{font-family:'Barlow Condensed';font-style:normal;font-weight:700;font-display:swap;src:url(fonts/barlow-condensed-latin-700-normal.woff2) format('woff2')}
+:root{
+  --bg:#E9ECE4; --surface:#F7F8F4; --ink:#1D2A23; --muted:#5E6B62; --line:#CBD2C6;
+  --sun:#F2C230; --electra:#17756B; --market:#6F7F2E; --warn:#B4452B;
+  --font:'Barlow',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --num:'Barlow Condensed','Arial Narrow',system-ui,sans-serif;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){
+    --bg:#141B17; --surface:#1D2621; --ink:#E6EBE3; --muted:#9AA69C; --line:#33403A;
+    --electra:#3FB3A5; --market:#A6B85A; --warn:#E07A5F;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#141B17; --surface:#1D2621; --ink:#E6EBE3; --muted:#9AA69C; --line:#33403A;
+  --electra:#3FB3A5; --market:#A6B85A; --warn:#E07A5F;
+}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:inherit;margin:0;padding:0}
+body{min-height:100%;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:16px;line-height:1.45}
+main{max-width:560px;margin:0 auto;padding:20px 18px 110px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;margin-bottom:18px}
+h1{font-family:var(--num);font-weight:700;font-size:2rem;line-height:1;letter-spacing:.01em}
+h1 small{display:block;font-family:var(--font);font-weight:500;font-size:.85rem;color:var(--muted);margin-top:4px;letter-spacing:0}
+h2{font-size:1.1rem;font-weight:600;margin:0 0 10px}
+.mode{display:flex;border:1.5px solid var(--ink);border-radius:999px;overflow:hidden;flex-shrink:0}
+.mode button{border:0;background:none;color:var(--ink);font:500 .85rem var(--font);padding:6px 12px;cursor:pointer}
+.mode button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+section.view{display:none}
+section.view.on{display:block}
+.block{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.muted{color:var(--muted);font-size:.9rem}
+
+/* La jauge : la pièce maîtresse */
+.gauge{position:relative;border:2.5px solid var(--ink);border-radius:10px;height:74px;display:flex;overflow:hidden;margin:6px 10px 10px 0}
+.gauge::after{content:"";position:absolute;right:-10px;top:22px;width:7px;height:26px;background:var(--ink);border-radius:0 4px 4px 0}
+.gauge .seg{height:100%;display:flex;align-items:flex-end;padding:6px 8px;color:#fff;font:700 1.1rem var(--num);white-space:nowrap;overflow:hidden;transition:width .5s ease}
+.seg.market{background:var(--market)}
+.seg.electra{background:var(--electra)}
+.gauge-wrap{position:relative}
+.big{font-family:var(--num);font-weight:700;font-size:3.4rem;line-height:.95}
+.big span{font-size:1.2rem;font-weight:500;margin-left:4px}
+.legend{display:flex;flex-wrap:wrap;gap:14px;font-size:.9rem;margin-top:4px}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:0}
+
+.row{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-top:1px solid var(--line);align-items:baseline}
+.row:first-of-type{border-top:0}
+.row b{font-family:var(--num);font-size:1.25rem;font-weight:700;white-space:nowrap}
+.best{background:var(--sun);color:#1D2A23;border-radius:6px;padding:0 6px;font-size:.8rem;font-weight:600;margin-left:6px}
+.tip{border-left:4px solid var(--sun);padding:8px 12px;background:var(--surface);border-radius:0 10px 10px 0;margin-bottom:14px;font-size:.95rem}
+
+label{display:block;font-size:.88rem;font-weight:500;color:var(--muted);margin:10px 0 4px}
+input,select,textarea{width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px}
+textarea{min-height:60px;resize:vertical}
+input:focus-visible,select:focus-visible,textarea:focus-visible,button:focus-visible{outline:3px solid var(--sun);outline-offset:2px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.btn{display:block;width:100%;margin-top:14px;border:0;border-radius:12px;padding:13px;font:600 1rem var(--font);background:var(--ink);color:var(--bg);cursor:pointer}
+.btn.ghost{background:none;color:var(--ink);border:1.5px solid var(--line)}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chips button{border:1.5px solid var(--line);background:none;color:var(--ink);border-radius:999px;padding:6px 14px;font:500 .9rem var(--font);cursor:pointer}
+.chips button[aria-pressed="true"]{border-color:var(--ink);background:var(--ink);color:var(--bg)}
+
+.entry{display:grid;grid-template-columns:6px 1fr auto;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.entry:first-child{border-top:0}
+.entry .bar{border-radius:3px}
+.entry .t{font-weight:600}
+.entry .s{font-size:.85rem;color:var(--muted)}
+.entry .v{text-align:right;font-family:var(--num);font-weight:700;font-size:1.15rem}
+.del{background:none;border:0;color:var(--warn);font:500 .8rem var(--font);cursor:pointer;padding:2px 0}
+.empty{padding:18px 0;color:var(--muted)}
+
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);z-index:5}
+nav div{max-width:560px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+nav button{border:0;background:none;color:var(--muted);font:500 .8rem var(--font);padding:10px 4px 12px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+nav button svg{width:22px;height:22px}
+nav button[aria-current="page"]{color:var(--ink)}
+nav button[aria-current="page"] svg{color:var(--electra)}
+.toast{position:fixed;left:50%;bottom:calc(80px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 18px;border-radius:999px;font-size:.9rem;opacity:0;pointer-events:none;transition:opacity .25s}
+.toast.show{opacity:1}
+@media (prefers-reduced-motion:reduce){.gauge .seg,.toast{transition:none}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Branché !<small id="carName">Jeep Avenger électrique</small></h1>
+    <div class="mode" role="group" aria-label="Mode">
+      <button id="mSim" aria-pressed="true">Prévision</button>
+      <button id="mReal" aria-pressed="false">Réel</button>
+    </div>
+  </header>
+
+  <!-- SEMAINE -->
+  <section class="view on" id="v-week">
+    <div class="block">
+      <h2 id="weekTitle">Ta semaine type</h2>
+      <div class="big" id="needKwh">0<span>kWh</span></div>
+      <p class="muted" id="needLine"></p>
+      <div class="gauge-wrap"><div class="gauge" id="gauge" role="img" aria-label=""></div></div>
+      <div class="legend">
+        <span><i style="background:var(--market)"></i>Supermarchés</span>
+        <span><i style="background:var(--electra)"></i>Electra</span>
+      </div>
+    </div>
+    <div class="tip" id="weekTip"></div>
+    <div class="block">
+      <h2>Coût par mois selon la formule Electra</h2>
+      <div id="formulas"></div>
+      <p class="muted" style="margin-top:8px" id="fuelLine"></p>
+    </div>
+    <div class="block">
+      <h2>Combien pendant les courses ?</h2>
+      <div class="grid2">
+        <div><label for="tStart">Batterie à l'arrivée (%)</label><input id="tStart" type="number" inputmode="numeric" min="0" max="100" value="35"></div>
+        <div><label for="tMin">Durée des courses (min)</label><input id="tMin" type="number" inputmode="numeric" min="5" value="45"></div>
+      </div>
+      <label for="tPow">Puissance de la borne (kW)</label>
+      <input id="tPow" type="number" inputmode="decimal" min="3" value="22">
+      <div id="timerOut" style="margin-top:12px"></div>
+    </div>
+  </section>
+
+  <!-- CARNET -->
+  <section class="view" id="v-log">
+    <div class="block">
+      <h2>Noter une recharge</h2>
+      <div class="chips" role="group" aria-label="Type de borne" id="srcChips">
+        <button data-src="market" aria-pressed="true">Supermarché</button>
+        <button data-src="electra" aria-pressed="false">Electra</button>
+        <button data-src="other" aria-pressed="false">Autre</button>
+      </div>
+      <label for="lPlace">Lieu</label>
+      <input id="lPlace" list="placeList" placeholder="ex. Carrefour Waterloo">
+      <datalist id="placeList"></datalist>
+      <div class="grid2">
+        <div><label for="lKwh">Énergie (kWh)</label><input id="lKwh" type="number" inputmode="decimal" step="0.1" min="0"></div>
+        <div><label for="lEur">Montant payé (€)</label><input id="lEur" type="number" inputmode="decimal" step="0.01" min="0"></div>
+        <div><label for="lDate">Date</label><input id="lDate" type="date"></div>
+        <div><label for="lKm">Compteur (km)</label><input id="lKm" type="number" inputmode="numeric" min="0" placeholder="facultatif"></div>
+      </div>
+      <label for="lIdle">Dont frais d'occupation (€)</label>
+      <input id="lIdle" type="number" inputmode="decimal" step="0.01" min="0" placeholder="facultatif">
+      <button class="btn" id="addLog">Ajouter la recharge</button>
+    </div>
+    <div class="block">
+      <h2>Historique</h2>
+      <div id="logList"></div>
+    </div>
+  </section>
+
+  <!-- BORNES -->
+  <section class="view" id="v-spots">
+    <div class="block">
+      <h2>Mes bornes</h2>
+      <div id="spotList"></div>
+    </div>
+    <div class="block">
+      <h2>Ajouter une borne</h2>
+      <label for="sName">Nom</label><input id="sName" placeholder="ex. Delhaize Rhode">
+      <div class="grid2">
+        <div><label for="sType">Type</label>
+          <select id="sType"><option value="market">Supermarché</option><option value="electra">Electra</option><option value="other">Autre</option></select></div>
+        <div><label for="sPow">Puissance (kW)</label><input id="sPow" type="number" inputmode="decimal" placeholder="22"></div>
+      </div>
+      <label for="sPrice">Prix (€/kWh)</label><input id="sPrice" type="number" inputmode="decimal" step="0.01" placeholder="0 si gratuite">
+      <label for="sNote">Notes</label><textarea id="sNote" placeholder="Horaires du parking, borne souvent occupée le samedi…"></textarea>
+      <button class="btn" id="addSpot">Ajouter la borne</button>
+    </div>
+  </section>
+
+  <!-- RÉGLAGES -->
+  <section class="view" id="v-set">
+    <div class="block">
+      <h2>La voiture</h2>
+      <div class="grid2">
+        <div><label for="batt">Batterie utile (kWh)</label><input id="batt" type="number" step="0.1"></div>
+        <div><label for="cons">Consommation (kWh/100 km)</label><input id="cons" type="number" step="0.1"></div>
+        <div><label for="acMax">Charge AC max (kW)</label><input id="acMax" type="number" step="0.1"></div>
+        <div><label for="winter">Hiver</label><select id="winter"><option value="0">Non</option><option value="1">Oui (+20 %)</option></select></div>
+      </div>
+    </div>
+    <div class="block">
+      <h2>Ses habitudes</h2>
+      <div class="grid2">
+        <div><label for="kmWeek">Km par semaine</label><input id="kmWeek" type="number" inputmode="numeric"></div>
+        <div><label for="shops">Courses par semaine</label><input id="shops" type="number" inputmode="numeric" min="0"></div>
+        <div><label for="shopMin">Durée des courses (min)</label><input id="shopMin" type="number" inputmode="numeric"></div>
+        <div><label for="shopPow">Borne du supermarché (kW)</label><input id="shopPow" type="number" step="0.1"></div>
+      </div>
+      <label for="shopPrice">Prix au supermarché (€/kWh)</label><input id="shopPrice" type="number" step="0.01">
+    </div>
+    <div class="block">
+      <h2>Tarifs Electra</h2>
+      <p class="muted">Les prix varient selon la station et l'heure. Mets ici ce que l'app Electra affiche près de chez lui.</p>
+      <label for="eBase">Prix sans abonnement (€/kWh)</label><input id="eBase" type="number" step="0.01">
+      <div class="grid2">
+        <div><label for="essFee">Essential (€/mois)</label><input id="essFee" type="number" step="0.01"></div>
+        <div><label for="essDisc">Remise Essential (€/kWh)</label><input id="essDisc" type="number" step="0.01"></div>
+        <div><label for="smFee">Smart (€/mois)</label><input id="smFee" type="number" step="0.01"></div>
+        <div><label for="smDisc">Remise Smart (€/kWh)</label><input id="smDisc" type="number" step="0.01"></div>
+      </div>
+    </div>
+    <div class="block">
+      <h2>Comparaison carburant</h2>
+      <div class="grid2">
+        <div><label for="fuelL">Conso thermique (L/100 km)</label><input id="fuelL" type="number" step="0.1"></div>
+        <div><label for="fuelP">Prix du litre (€)</label><input id="fuelP" type="number" step="0.01"></div>
+      </div>
+    </div>
+    <button class="btn ghost" id="resetSet">Remettre les valeurs par défaut</button>
+  </section>
+</main>
+
+<nav aria-label="Sections"><div>
+  <button data-v="week" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="17" height="10" rx="2"/><path d="M22 11v2"/><path d="M6 10v4M10 10v4"/></svg>Semaine</button>
+  <button data-v="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 4h11l3 3v13H5z"/><path d="M9 10h6M9 14h6"/></svg>Carnet</button>
+  <button data-v="spots"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-6.2-7-11.5A7 7 0 0 1 19 9.5C19 14.8 12 21 12 21z"/><path d="M12.5 6.5 10 10.5h3l-2.5 4"/></svg>Bornes</button>
+  <button data-v="set"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>Réglages</button>
+</div></nav>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+const DEF = {batt:50.8,cons:16.4,acMax:11,winter:"0",kmWeek:250,shops:2,shopMin:45,shopPow:22,shopPrice:0.35,
+  eBase:0.59,essFee:1.99,essDisc:0.10,smFee:9.99,smDisc:0.20,fuelL:6,fuelP:1.75,mode:"sim"};
+const load=(k,d)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}};
+const save=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}};
+let S=Object.assign({},DEF,load("branche:settings",{}));
+let LOG=load("branche:log",[]), SPOTS=load("branche:spots",[]);
+let src="market";
+const $=id=>document.getElementById(id);
+const eur=n=>n.toLocaleString("fr-BE",{style:"currency",currency:"EUR"});
+const f1=n=>n.toLocaleString("fr-BE",{maximumFractionDigits:1});
+const COLORS={market:"var(--market)",electra:"var(--electra)",other:"var(--muted)"};
+const NAMES={market:"Supermarché",electra:"Electra",other:"Autre"};
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("show");setTimeout(()=>e.classList.remove("show"),1800)}
+
+/* Navigation */
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.removeAttribute("aria-current"));
+  b.setAttribute("aria-current","page");
+  document.querySelectorAll(".view").forEach(v=>v.classList.remove("on"));
+  $("v-"+b.dataset.v).classList.add("on"); window.scrollTo(0,0);
+});
+function setMode(m){S.mode=m;save("branche:settings",S);$("mSim").setAttribute("aria-pressed",m==="sim");$("mReal").setAttribute("aria-pressed",m==="real");renderWeek()}
+$("mSim").onclick=()=>setMode("sim");$("mReal").onclick=()=>setMode("real");
+
+/* Réglages */
+const FIELDS=Object.keys(DEF).filter(k=>k!=="mode");
+function fillSettings(){FIELDS.forEach(k=>$(k).value=S[k])}
+FIELDS.forEach(k=>$(k).addEventListener("input",()=>{const v=$(k).value;S[k]=k==="winter"?v:(v===""?DEF[k]:parseFloat(v));save("branche:settings",S);renderWeek()}));
+$("resetSet").onclick=()=>{const m=S.mode;S=Object.assign({},DEF,{mode:m});save("branche:settings",S);fillSettings();renderWeek();toast("Valeurs par défaut rétablies")};
+
+const cons=()=>S.cons*(S.winter==="1"?1.2:1);
+const acPower=p=>Math.min(p,S.acMax)*0.9; // ~10 % de pertes
+
+function formulaCosts(electraKwhMonth){
+  return [
+    {n:"Sans abonnement",c:electraKwhMonth*S.eBase},
+    {n:"Electra+ Essential",c:S.essFee+electraKwhMonth*(S.eBase-S.essDisc)},
+    {n:"Electra+ Smart",c:S.smFee+electraKwhMonth*(S.eBase-S.smDisc)}
+  ];
+}
+
+/* Données de la semaine : prévision ou réel (30 derniers jours) */
+function weekData(){
+  if(S.mode==="sim"){
+    const need=S.kmWeek*cons()/100;
+    const perShop=acPower(S.shopPow)*S.shopMin/60;
+    const market=Math.min(need,S.shops*perShop);
+    const electra=Math.max(0,need-market);
+    return {need,market,electra,other:0,km:S.kmWeek,marketCost:market*S.shopPrice,sim:true};
+  }
+  const since=Date.now()-30*864e5;
+  const recent=LOG.filter(l=>new Date(l.date).getTime()>=since);
+  const sum=t=>recent.filter(l=>l.src===t).reduce((a,l)=>a+l.kwh,0)*7/30;
+  const kmVals=recent.filter(l=>l.km).map(l=>l.km);
+  const km=kmVals.length>1?(Math.max(...kmVals)-Math.min(...kmVals))*7/30:null;
+  const market=sum("market"),electra=sum("electra"),other=sum("other");
+  const marketCost=recent.filter(l=>l.src!=="electra").reduce((a,l)=>a+(l.eur||0),0)*7/30;
+  const idle=recent.reduce((a,l)=>a+(l.idle||0),0);
+  return {need:market+electra+other,market:market+other,electra,km,marketCost,idle,n:recent.length,sim:false};
+}
+
+function renderWeek(){
+  const d=weekData();
+  $("weekTitle").textContent=d.sim?"Ta semaine type":"Ta semaine réelle (moyenne sur 30 jours)";
+  $("needKwh").innerHTML=f1(d.need)+"<span>kWh / semaine</span>";
+  if(d.sim) $("needLine").textContent=`${S.kmWeek} km à ${f1(cons())} kWh/100 km. La batterie en contient ${f1(S.batt)}.`;
+  else $("needLine").textContent=d.n?`${d.n} recharge(s) notée(s) ces 30 derniers jours${d.km?`, environ ${Math.round(d.km)} km par semaine`:""}.`:"Aucune recharge notée ces 30 derniers jours.";
+  const tot=d.market+d.electra||1;
+  const pm=d.market/tot*100,pe=d.electra/tot*100;
+  $("gauge").innerHTML=(d.need?"":`<div class="seg" style="width:100%;background:var(--line)"></div>`)+
+    (d.market?`<div class="seg market" style="width:${pm}%">${pm>18?f1(d.market)+" kWh":""}</div>`:"")+
+    (d.electra?`<div class="seg electra" style="width:${pe}%">${pe>18?f1(d.electra)+" kWh":""}</div>`:"");
+  $("gauge").setAttribute("aria-label",`Supermarchés ${f1(d.market)} kWh, Electra ${f1(d.electra)} kWh`);
+
+  // Conseil
+  let tip;
+  if(!d.need) tip="Note tes premières recharges dans le Carnet pour voir ta vraie semaine.";
+  else if(d.sim){
+    const stops=d.electra/(S.batt*0.6);
+    tip=d.electra<0.5?"Les courses suffisent à couvrir la semaine : Electra ne sert que pour les longs trajets.":
+      `Il faudra environ ${stops<1?"un passage toutes les "+Math.round(1/stops)+" semaines":f1(stops)+" passage(s) par semaine"} chez Electra (recharge de 20 à 80 %, environ 25 minutes).`;
+  } else tip=d.idle?`Frais d'occupation ce mois-ci : ${eur(d.idle)}. Pense à déplacer la voiture dès que la charge est finie.`:
+    `Les supermarchés couvrent ${Math.round(pm)} % de ton énergie.`;
+  $("weekTip").textContent=tip;
+
+  // Formules
+  const eMonth=d.electra*52/12;
+  const costs=formulaCosts(eMonth);
+  const best=costs.reduce((a,b)=>b.c<a.c?b:a);
+  const extra=d.sim?d.marketCost*52/12:d.marketCost*52/12;
+  $("formulas").innerHTML=costs.map(c=>`<div class="row"><span>${c.n}${c===best?'<span class="best">la moins chère</span>':""}</span><b>${eur(c.c+extra)}</b></div>`).join("");
+  const kmMonth=(d.km||S.kmWeek)*52/12;
+  const fuel=kmMonth*S.fuelL/100*S.fuelP;
+  $("fuelLine").textContent=`Supermarchés inclus (${eur(extra)}). En carburant, ${Math.round(kmMonth)} km par mois coûteraient environ ${eur(fuel)}.`;
+  renderTimer();
+}
+
+/* Minuteur de courses */
+function renderTimer(){
+  const start=Math.max(0,Math.min(100,+$("tStart").value||0)),min=+$("tMin").value||0,pow=+$("tPow").value||0;
+  let kwh=acPower(pow)*min/60;
+  const room=S.batt*(100-start)/100; kwh=Math.min(kwh,room);
+  const end=start+kwh/S.batt*100;
+  const km=kwh/cons()*100;
+  const fullMin=room/acPower(pow||1)*60;
+  const t=new Date(Date.now()+min*6e4).toLocaleTimeString("fr-BE",{hour:"2-digit",minute:"2-digit"});
+  $("timerOut").innerHTML=`<div class="row"><span>Énergie gagnée</span><b>${f1(kwh)} kWh</b></div>
+   <div class="row"><span>Batterie en repartant</span><b>${Math.round(end)} %</b></div>
+   <div class="row"><span>Autonomie ajoutée</span><b>≈ ${Math.round(km)} km</b></div>
+   <p class="muted" style="margin-top:6px">${fullMin<=min?"La batterie sera pleine avant la fin des courses : pense à déplacer la voiture.":`Si tu pars maintenant, retour prévu vers ${t}.`}</p>`;
+}
+["tStart","tMin","tPow"].forEach(id=>$(id).addEventListener("input",renderTimer));
+
+/* Carnet */
+$("lDate").valueAsDate=new Date();
+document.querySelectorAll("#srcChips button").forEach(b=>b.onclick=()=>{
+  src=b.dataset.src;document.querySelectorAll("#srcChips button").forEach(x=>x.setAttribute("aria-pressed",x===b));
+});
+$("addLog").onclick=()=>{
+  const kwh=parseFloat($("lKwh").value);
+  if(!kwh){toast("Indique l'énergie rechargée en kWh");$("lKwh").focus();return}
+  LOG.unshift({id:Date.now(),src,place:$("lPlace").value.trim(),kwh,eur:parseFloat($("lEur").value)||0,
+    date:$("lDate").value||new Date().toISOString().slice(0,10),km:parseFloat($("lKm").value)||null,idle:parseFloat($("lIdle").value)||0});
+  LOG.sort((a,b)=>b.date.localeCompare(a.date));
+  save("branche:log",LOG);["lKwh","lEur","lKm","lIdle","lPlace"].forEach(i=>$(i).value="");
+  renderLog();renderWeek();toast("Recharge ajoutée");
+};
+function renderLog(){
+  $("logList").innerHTML=LOG.length?LOG.map(l=>{
+    const pk=l.kwh&&l.eur?l.eur/l.kwh:null;
+    return `<div class="entry"><div class="bar" style="background:${COLORS[l.src]}"></div>
+      <div><div class="t">${esc(l.place)||NAMES[l.src]}</div>
+      <div class="s">${new Date(l.date).toLocaleDateString("fr-BE",{day:"numeric",month:"short"})}, ${f1(l.kwh)} kWh${pk?`, ${pk.toFixed(2).replace(".",",")} €/kWh`:""}${l.idle?`, dont ${eur(l.idle)} d'occupation`:""}</div>
+      <button class="del" data-id="${l.id}">Supprimer</button></div>
+      <div class="v">${l.eur?eur(l.eur):"gratuit"}</div></div>`}).join(""):
+    `<p class="empty">Aucune recharge pour l'instant. Note la première après ton prochain passage à la borne.</p>`;
+  $("logList").querySelectorAll(".del").forEach(b=>b.onclick=()=>{
+    if(!confirm("Supprimer cette recharge ?"))return;
+    LOG=LOG.filter(l=>l.id!=b.dataset.id);save("branche:log",LOG);renderLog();renderWeek();toast("Recharge supprimée")});
+}
+
+/* Bornes */
+function esc(s){return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+$("addSpot").onclick=()=>{
+  const name=$("sName").value.trim();if(!name){toast("Donne un nom à la borne");$("sName").focus();return}
+  SPOTS.push({id:Date.now(),name,type:$("sType").value,pow:parseFloat($("sPow").value)||null,price:$("sPrice").value===""?null:parseFloat($("sPrice").value),note:$("sNote").value.trim()});
+  save("branche:spots",SPOTS);["sName","sPow","sPrice","sNote"].forEach(i=>$(i).value="");renderSpots();toast("Borne ajoutée");
+};
+function renderSpots(){
+  $("spotList").innerHTML=SPOTS.length?SPOTS.map(s=>`<div class="entry"><div class="bar" style="background:${COLORS[s.type]}"></div>
+    <div><div class="t">${esc(s.name)}</div><div class="s">${NAMES[s.type]}${s.pow?`, ${s.pow} kW`:""}${s.price!==null?`, ${s.price?s.price.toFixed(2).replace(".",",")+" €/kWh":"gratuite"}`:""}</div>
+    ${s.note?`<div class="s" style="color:var(--ink);margin-top:3px">${esc(s.note)}</div>`:""}
+    <div style="display:flex;gap:14px">${s.pow&&s.type!=="electra"?`<button class="del" style="color:var(--electra)" data-use="${s.id}">Utiliser pour le minuteur</button>`:""}<button class="del" data-id="${s.id}">Supprimer</button></div></div><div></div></div>`).join(""):
+    `<p class="empty">Ajoute les supermarchés où il fait ses courses et les stations Electra qu'il utilise.</p>`;
+  $("placeList").innerHTML=SPOTS.map(s=>`<option value="${esc(s.name)}">`).join("");
+  $("spotList").querySelectorAll("[data-id]").forEach(b=>b.onclick=()=>{
+    if(!confirm("Supprimer cette borne ?"))return;
+    SPOTS=SPOTS.filter(s=>s.id!=b.dataset.id);save("branche:spots",SPOTS);renderSpots()});
+  $("spotList").querySelectorAll("[data-use]").forEach(b=>b.onclick=()=>{
+    const s=SPOTS.find(x=>x.id==b.dataset.use);$("tPow").value=s.pow;
+    document.querySelector('nav button[data-v="week"]').click();renderTimer();$("tStart").focus()});
+}
+// Pré-remplir le type de recharge quand on choisit une borne connue
+$("lPlace").addEventListener("change",()=>{const s=SPOTS.find(x=>x.name===$("lPlace").value);
+  if(s){document.querySelector(`#srcChips [data-src="${s.type}"]`).click();
+    if(s.price!==null&&$("lKwh").value)$("lEur").value=(s.price*$("lKwh").value).toFixed(2)}});
+
+if("serviceWorker" in navigator){navigator.serviceWorker.register("service-worker.js").catch(()=>{})}
+fillSettings();setMode(S.mode);renderLog();renderSpots();
+</script>
+</body>
+</html>
