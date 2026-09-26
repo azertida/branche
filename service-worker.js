@@ -1,5 +1,5 @@
 // Incrémenter CACHE_NAME à chaque déploiement pour forcer la mise à jour
-const CACHE_NAME = 'branche-v1';
+const CACHE_NAME = 'branche-v2';
 const FILES = [
   './', './index.html', './manifest.json',
   './icons/icon.png', './icons/icon-192.png', './icons/icon-512.png', './icons/icon-maskable-512.png',

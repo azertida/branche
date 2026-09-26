@@ -228,6 +228,14 @@ nav button[aria-current="page"] svg{color:var(--electra)}
         <div><label for="fuelP">Prix du litre (€)</label><input id="fuelP" type="number" step="0.01"></div>
       </div>
     </div>
+    <div class="block">
+      <h2>Sauvegarde</h2>
+      <p class="muted">Tes recharges, tes bornes et tes réglages restent uniquement sur ce téléphone. Exporte-les de temps en temps pour ne rien perdre en cas de changement de téléphone.</p>
+      <p class="muted" id="lastExport" style="margin-top:6px"></p>
+      <button class="btn" id="exportBtn">Exporter mes données</button>
+      <button class="btn ghost" id="importBtn">Importer une sauvegarde</button>
+      <input type="file" id="importFile" accept=".json,application/json" hidden>
+    </div>
     <button class="btn ghost" id="resetSet">Remettre les valeurs par défaut</button>
   </section>
 </main>
@@ -407,6 +415,39 @@ function renderSpots(){
 $("lPlace").addEventListener("change",()=>{const s=SPOTS.find(x=>x.name===$("lPlace").value);
   if(s){document.querySelector(`#srcChips [data-src="${s.type}"]`).click();
     if(s.price!==null&&$("lKwh").value)$("lEur").value=(s.price*$("lKwh").value).toFixed(2)}});
+
+/* Sauvegarde : export et import */
+function showLastExport(){
+  const d=load("branche:lastExport",null);
+  $("lastExport").textContent=d?`Dernier export : ${new Date(d).toLocaleDateString("fr-BE",{day:"numeric",month:"long",year:"numeric"})}.`:"Aucun export pour l'instant.";
+}
+$("exportBtn").onclick=async()=>{
+  const data={app:"branche",version:1,exported:new Date().toISOString(),settings:S,log:LOG,spots:SPOTS};
+  const name=`branche-sauvegarde-${new Date().toISOString().slice(0,10)}.json`;
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});
+  const file=new File([blob],name,{type:"application/json"});
+  try{
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      await navigator.share({files:[file],title:"Sauvegarde Branché !"});
+    }else{
+      const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=name;
+      document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+    }
+    save("branche:lastExport",Date.now());showLastExport();toast("Données exportées");
+  }catch(e){if(e.name!=="AbortError")toast("L'export n'a pas abouti. Réessaie.")}
+};
+$("importBtn").onclick=()=>$("importFile").click();
+$("importFile").onchange=async e=>{
+  const f=e.target.files[0];e.target.value="";if(!f)return;
+  let data;
+  try{data=JSON.parse(await f.text())}catch(err){toast("Ce fichier n'est pas une sauvegarde lisible");return}
+  if(data.app!=="branche"||!Array.isArray(data.log)||!Array.isArray(data.spots)){toast("Ce fichier n'est pas une sauvegarde de Branché !");return}
+  if(!confirm(`Remplacer les données actuelles par cette sauvegarde (${data.log.length} recharge(s), ${data.spots.length} borne(s)) ?`))return;
+  S=Object.assign({},DEF,data.settings||{});LOG=data.log;SPOTS=data.spots;
+  save("branche:settings",S);save("branche:log",LOG);save("branche:spots",SPOTS);
+  fillSettings();setMode(S.mode);renderLog();renderSpots();toast("Sauvegarde importée");
+};
+showLastExport();
 
 if("serviceWorker" in navigator){navigator.serviceWorker.register("service-worker.js").catch(()=>{})}
 fillSettings();setMode(S.mode);renderLog();renderSpots();
